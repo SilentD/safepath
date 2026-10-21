@@ -2,6 +2,7 @@
 node_modules/
 jspm_packages/
 web_modules/
+config/serviceAccountKey.json
 
 # Environment variables and secrets
 .env
