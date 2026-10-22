@@ -5,9 +5,14 @@ import AuthTokenService from "../services/AuthTokenService.js";
 export default async function requireAuthentication(req, res, next) {
   try {
     const header = req.headers.authorization || "";
-    const token = header.startsWith("Bearer ") ? header.slice(7) : "";
+    const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
 
-    if (!token) {
+    if (
+      !token ||
+      token === "null" ||
+      token === "undefined" ||
+      token.split(".").length !== 3
+    ) {
       return res.status(401).json({
         success: false,
         message: "Authentication required.",
@@ -15,13 +20,14 @@ export default async function requireAuthentication(req, res, next) {
     }
 
     let payload;
-
     try {
       payload = AuthTokenService.verifyAccessToken(token);
-    } catch {
+    } catch (err) {
+      // Distinguish expired vs malformed - helps frontend
+      const isExpired = err.name === "TokenExpiredError";
       return res.status(401).json({
         success: false,
-        message: "Invalid or expired access token.",
+        message: isExpired ? "Access token expired." : "Invalid access token.",
       });
     }
 
@@ -32,8 +38,6 @@ export default async function requireAuthentication(req, res, next) {
       });
     }
 
-    const { getDb } = await import("../config/database.js");
-    const { toObjectId } = await import("../models/model-utils.js");
     const db = getDb();
 
     const session = await db.collection("sessions").findOne({
@@ -52,12 +56,15 @@ export default async function requireAuthentication(req, res, next) {
 
     const user = await User.findById(payload.sub);
 
-    if (!user || user.active === false || !user.emailVerified) {
+    if (!user || user.active === false) {
       return res.status(401).json({
         success: false,
         message: "Account unavailable.",
       });
     }
+
+    // Optional: allow unverified email to access but limited?
+    // If you require verification, keep this. If not, remove.
 
     req.user = {
       id: user._id.toString(),

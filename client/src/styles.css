@@ -1,0 +1,71 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-display: "Space Grotesk", sans-serif;
+  --font-sans: "DM Sans", sans-serif;
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-safe: var(--safe);
+  --color-destructive: var(--danger);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+:root {
+  --radius: 1rem;
+  --background: oklch(0.16 0.012 320);
+  --foreground: oklch(0.96 0.01 60);
+  --card: oklch(0.21 0.014 320);
+  --card-foreground: oklch(0.96 0.01 60);
+  --primary: oklch(0.78 0.12 310);
+  --primary-foreground: oklch(0.18 0.03 320);
+  --secondary: oklch(0.27 0.014 320);
+  --secondary-foreground: oklch(0.96 0.01 60);
+  --muted: oklch(0.25 0.012 320);
+  --muted-foreground: oklch(0.68 0.015 50);
+  --accent: oklch(0.3 0.02 40);
+  --accent-foreground: oklch(0.96 0.01 60);
+  --danger: oklch(0.6 0.23 25);
+  --danger-foreground: oklch(0.98 0.01 60);
+  --safe: oklch(0.75 0.15 155);
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.78 0.12 310);
+  --glow-danger: 0 0 60px -10px color-mix(in oklab, var(--danger) 70%, transparent);
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  body { background: var(--color-background); color: var(--color-foreground); font-family: var(--font-sans); }
+  h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.02em; }
+}
+
+@utility glow-danger { box-shadow: var(--glow-danger); }
+@utility red-mode { background: radial-gradient(circle at 50% 0%, color-mix(in oklab, var(--danger) 35%, transparent), var(--background) 70%); }
+@utility brand-wordmark {
+  font-family: "Syncopate", var(--font-display);
+  background: linear-gradient(90deg, oklch(0.5 0.13 350), oklch(0.82 0.12 300));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+@utility brand-gradient { background: linear-gradient(135deg, oklch(0.45 0.13 350), oklch(0.62 0.13 320) 50%, oklch(0.82 0.12 300)); }
+@utility brand-glow { background: radial-gradient(circle at 50% 20%, color-mix(in oklab, oklch(0.62 0.13 320) 35%, transparent), transparent 65%); }

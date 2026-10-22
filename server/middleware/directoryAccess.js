@@ -66,13 +66,13 @@ export async function requireAuthentication(req, res, next) {
 
     // Optional: allow unverified email to access but limited?
     // If you require verification, keep this. If not, remove.
-    if (!user.emailVerified) {
+    /*if (!user.emailVerified) {
       return res.status(403).json({
         // 403 not 401 - they ARE authenticated
         success: false,
         message: "Email not verified.",
       });
-    }
+    }*/
 
     req.user = {
       id: user._id.toString(),
@@ -86,6 +86,7 @@ export async function requireAuthentication(req, res, next) {
     return next(error);
   }
 }
+
 export function requireAdmin(req, res, next) {
   if (req.user?.role !== "admin") {
     return res.status(403).json({

@@ -1,7 +1,8 @@
 import "dotenv/config";
 import express from "express";
+import morgan from "morgan";
 import apiRouter from "./routes/appRouter.js";
-import errorHandler from "./middleware/errorHandler.js";
+import { errorHandler } from "./middleware/errorHandler.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 const app = express();
@@ -11,13 +12,14 @@ app.disable("x-powered-by");
 // After creating the Express app:
 app.use(
   cors({
-    origin: ["http://localhost:3000"],
+    origin: ["http://localhost:8080"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 app.use(express.json({ limit: "100kb" }));
 app.use(cookieParser());
+app.use(morgan("dev"));
 
 // Keep your existing CORS middleware, routes and error handler.
 
