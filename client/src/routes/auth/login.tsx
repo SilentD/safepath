@@ -21,32 +21,64 @@ function Login() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true); setError("");
+    setLoading(true);
+    setError("");
+
     try {
-      const { data } = await authAPI.login(form);
-      if (data.need2FA || data.requires2FA) {
-        localStorage.setItem("temp_email", form.email);
+      const data = await authAPI.login(form);
+      localStorage.setItem("temp-email", form.email);
+     
+      if (data.challengeId) {
+        localStorage.setItem("challenge", data.challengeId);
         nav({ to: "/auth/verify" });
-      } else {
-        localStorage.setItem("safepath_token", data.accessToken || data.token);
-        nav({ to: "/" });
+      }else {
+        const token = data.accessToken || data.token;
+        if (token) {
+          localStorage.setItem("safepath_token", token);
+        }
+        nav({ to: "/timer" });
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || "Login failed");
-    } finally { setLoading(false); }
+      setError(err.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <AppShell eyebrow="Welcome back" title="Sign in to SafePath">
       <p className="text-muted-foreground text-sm">Your safety companion, secured end-to-end.</p>
       <form onSubmit={submit} className="mt-8 space-y-4">
-        <input className="w-full h-12 rounded-xl border bg-input px-4 outline-none focus:border-primary text-sm" type="email" placeholder="you@email.com" value={form.email} onChange={e=>setForm({...form, email:e.target.value})} required />
-        <input className="w-full h-12 rounded-xl border bg-input px-4 outline-none focus:border-primary text-sm" type="password" placeholder="Password" value={form.password} onChange={e=>setForm({...form, password:e.target.value})} required />
-        {error && <p className="text-sm text-red-500 bg-red-50 p-3 rounded-xl">{error}</p>}
-        <button disabled={loading} className="w-full rounded-xl bg-primary py-4 font-semibold text-primary-foreground disabled:opacity-40">
+        <input
+          className="w-full h-12 rounded-xl border bg-input px-4 outline-none focus:border-primary text-sm"
+          type="email"
+          placeholder="you@email.com"
+          value={form.email}
+          onChange={(e) => setForm({ ...form, email: e.target.value })}
+          required
+        />
+        <input
+          className="w-full h-12 rounded-xl border bg-input px-4 outline-none focus:border-primary text-sm"
+          type="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={(e) => setForm({ ...form, password: e.target.value })}
+          required
+        />
+
+        {error && (
+          <p className="text-sm text-red-500 bg-red-50 p-3 rounded-xl">{error}</p>
+        )}
+
+        <button
+          disabled={loading}
+          type="submit"
+          className="w-full rounded-xl bg-primary py-4 font-semibold text-primary-foreground disabled:opacity-40"
+        >
           {loading ? "Signing in..." : "Sign in"}
         </button>
       </form>
+
       <div className="mt-6 text-center text-sm">
         <Link to="/auth/register" className="text-foreground font-medium">Create account</Link>
         <span className="text-muted-foreground mx-2">•</span>

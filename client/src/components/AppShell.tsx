@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { api } from "../lib/api";
 
 const tabs = [
   { to: "/", label: "Home" },
@@ -8,7 +9,10 @@ const tabs = [
   { to: "/support", label: "Support" },
 ] as const;
 
+  
+
 export function AppShell({ title, eyebrow, children, red }: { title: string; eyebrow: string; children: ReactNode; red?: boolean }) {
+ 
   return (
     <div className={`mx-auto flex min-h-screen max-w-md flex-col ${red ? "red-mode" : ""}`}>
       <header className="px-6 pt-8 pb-4">
@@ -24,6 +28,7 @@ export function AppShell({ title, eyebrow, children, red }: { title: string; eye
             {t.label}
           </Link>
         ))}
+        <button >logout</button>
       </nav>
     </div>
   );

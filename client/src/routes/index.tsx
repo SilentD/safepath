@@ -3,7 +3,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authAPI } from "../services/auth";
-import { api } from "../lib/api";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -29,7 +28,6 @@ function Home() {
   const [user, setUser] = useState<any>(null);
 
   
-
   return (
     <div className="brand-glow mx-auto flex min-h-screen max-w-md flex-col px-6 pt-14 pb-10">
       <p className="brand-wordmark text-center text-2xl font-bold tracking-[0.15em]">ONE 2 MANY</p>

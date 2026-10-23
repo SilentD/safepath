@@ -17,10 +17,12 @@ function VerifyEmail() {
 
   const submit = async () => {
     try {
-      const { data } = await authAPI.verifyEmail({ email, code: code.join("") });
+     const challengeId= localStorage.getItem("challenge");
+      const { data } = await authAPI.verifyEmail({ challengeId, code: code.join("") });
       localStorage.setItem("safepath_token", data.accessToken);
-      nav({ to: "/" });
+      nav({ to: "/auth/login" });
     } catch (e: any) { alert(e.response?.data?.message || "Invalid code"); }
+    localStorage.removeItem('challenge')
   };
 
   return (

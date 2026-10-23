@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { AppShell } from "@/components/AppShell";
+import { AppShell } from "../components/AppShell.tsx";
+import { timerAPI } from "../services/timer";
 
 export const Route = createFileRoute("/timer")({
   head: () => ({
@@ -19,11 +20,16 @@ const presets = [5, 15, 30, 60];
 function Timer() {
   const [mins, setMins] = useState(15);
   const [left, setLeft] = useState<number | null>(null);
+  const [pin, setPin] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
   useEffect(() => {
     if (left === null || left <= 0) return;
     const t = setTimeout(() => setLeft(left - 1), 1000);
     return () => clearTimeout(t);
   }, [left]);
+
   const total = mins * 60;
   const shown = left ?? total;
   const pct = left === null ? 1 : left / total;
@@ -32,37 +38,113 @@ function Timer() {
   const R = 110, C = 2 * Math.PI * R;
   const expired = left === 0;
 
+  // Helper to fetch GPS location
+  const getGPS = (): Promise<{ latitude: number; longitude: number } | null> => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve(null);
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+        () => resolve(null),
+        { timeout: 8000 }
+      );
+    });
+  };
+
+  const startTimer = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const gpsLocation = await getGPS();
+
+      await timerAPI.start({
+        durationMinutes: mins,
+        pin,
+        gpsLocation,
+      });
+
+      setLeft(total);
+    } catch (err: any) {
+      setError(err.message || "Failed to start timer");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AppShell eyebrow="Check-in" title="Safety Ping">
       <div className="relative mx-auto mt-4 grid aspect-square w-64 place-items-center">
         <svg className="absolute inset-0 -rotate-90" viewBox="0 0 240 240">
           <circle cx="120" cy="120" r={R} fill="none" strokeWidth="10" className="stroke-muted" />
-          <circle cx="120" cy="120" r={R} fill="none" strokeWidth="10" strokeLinecap="round"
-            className={expired ? "stroke-danger" : "stroke-primary"} strokeDasharray={C} strokeDashoffset={C * (1 - pct)}
-            style={{ transition: "stroke-dashoffset 1s linear" }} />
+          <circle
+            cx="120"
+            cy="120"
+            r={R}
+            fill="none"
+            strokeWidth="10"
+            strokeLinecap="round"
+            className={expired ? "stroke-danger" : "stroke-primary"}
+            strokeDasharray={C}
+            strokeDashoffset={C * (1 - pct)}
+            style={{ transition: "stroke-dashoffset 1s linear" }}
+          />
         </svg>
         <div className="text-center">
           <p className="font-display text-5xl font-bold tabular-nums">{mm}:{ss}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{expired ? "Alerting your circle…" : left === null ? "Ready" : "Running in background"}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {expired ? "Alerting your circle…" : left === null ? "Ready" : "Running in background"}
+          </p>
         </div>
       </div>
+
+      {error && (
+        <p className="mt-4 text-sm text-red-500 bg-red-50 p-3 rounded-xl text-center">{error}</p>
+      )}
 
       {left === null ? (
         <>
           <div className="mt-8 grid grid-cols-4 gap-2">
-            {presets.map((p) => (
-              <button key={p} onClick={() => setMins(p)}
-                className={`rounded-xl border py-3 text-sm font-medium ${p === mins ? "border-primary bg-primary/10 text-primary" : "bg-card"}`}>
+            {presets.main ? null : presets.map((p) => (
+              <button
+                key={p}
+                onClick={() => setMins(p)}
+                className={`rounded-xl border py-3 text-sm font-medium ${
+                  p === mins ? "border-primary bg-primary/10 text-primary" : "bg-card"
+                }`}
+              >
                 {p}m
               </button>
             ))}
           </div>
-          <button onClick={() => setLeft(total)} className="mt-6 w-full rounded-xl bg-primary py-4 font-semibold text-primary-foreground">Start timer</button>
+
+          <input
+            className="mt-4 w-full h-12 rounded-xl border bg-input px-4 outline-none focus:border-primary text-sm"
+            type="password"
+            placeholder="Safety PIN"
+            value={pin}
+            onChange={(e) => setPin(e.target.value)}
+            required
+          />
+
+          <button
+            disabled={loading || !pin}
+            onClick={startTimer}
+            className="mt-6 w-full rounded-xl bg-primary py-4 font-semibold text-primary-foreground disabled:opacity-40"
+          >
+            {loading ? "Starting timer..." : "Start timer"}
+          </button>
         </>
       ) : (
         <div className="mt-8 grid grid-cols-2 gap-3">
-          <button onClick={() => setLeft(null)} className="rounded-xl bg-safe py-4 font-semibold text-primary-foreground">I'm safe</button>
-          <button onClick={() => setLeft(left + 600)} className="rounded-xl border bg-card py-4 font-semibold">+10 min</button>
+          <button onClick={() => setLeft(null)} className="rounded-xl bg-green-600 py-4 font-semibold text-white">
+            I'm safe
+          </button>
+          <button onClick={() => setLeft(left + 600)} className="rounded-xl border bg-card py-4 font-semibold">
+            +10 min
+          </button>
         </div>
       )}
 

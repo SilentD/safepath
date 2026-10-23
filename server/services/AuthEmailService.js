@@ -57,6 +57,23 @@ export default class AuthEmailService {
     });
   }
 
+  static async sendWarning({ url, fullnames, geoLocation, contacts: [] }) {
+    for (contact in contacts) {
+      await this.getTransporter().sendMail({
+        from: process.env.SMTP_FROM,
+        contact,
+        subject: "SafePath Emergency Alert",
+        text: [
+          "Urgent Attention required please assist: ${fullnames}",
+          "",
+          `visit: ${url} to assist at ${geoLocation}`,
+          "",
+          "If you did not request this, ignore this email.",
+        ].join("\n"),
+      });
+    }
+  }
+
   static async sendPasswordReset({ to, resetUrl }) {
     await this.getTransporter().sendMail({
       from: process.env.SMTP_FROM,
