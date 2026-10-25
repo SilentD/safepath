@@ -31,8 +31,12 @@ function Login() {
       if (data.challengeId) {
         localStorage.setItem("challenge", data.challengeId);
         nav({ to: "/auth/verify" });
-      }else {
+      }else if(data.sessionUser) {
         const token = data.accessToken || data.token;
+        const expiresIn = data.expiresIn || "50m";
+        const userid = data.sessionUser?.id;
+        localStorage.setItem("userid", userid);
+      
         if (token) {
           localStorage.setItem("safepath_token", token);
         }

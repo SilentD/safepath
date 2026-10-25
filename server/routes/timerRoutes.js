@@ -1,7 +1,7 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import TimerController from "../controllers/timerController.js";
-import requireUser from "../middleware/requireUser.js";
+import requireAuthentication from "../middleware/requireAuthentication.js";
 
 // Import and apply your actual token/session verification middleware
 // before requireUser when authentication is available.
@@ -21,11 +21,11 @@ export function limits() {
   return checkInLimiter;
 }
 
-timerRoutes.post("/start", requireUser, TimerController.start);
+timerRoutes.post("/start", TimerController.start);
 
 timerRoutes.post(
   "/:timerId/checkin",
-  requireUser,
+  requireAuthentication,
   limits,
   TimerController.checkin,
 );

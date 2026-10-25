@@ -1,7 +1,9 @@
 import bcrypt from "bcryptjs";
 import Timer from "../models/Timer.js";
 import { toObjectId } from "../models/model-utils.js";
+import AlertService from "../services/NotificationService.js";
 
+// Example inside your timer expiration check or background cron job:
 function httpError(message, statusCode = 400) {
   return Object.assign(new Error(message), { statusCode });
 }
@@ -89,5 +91,23 @@ export default class TimerService {
       status: updated.status,
       checkedInAt: updated.updatedAt,
     };
+  }
+
+  // Example inside your timer expiration check or background cron job:
+  static async handleTimerExpiration(timer) {
+    try {
+      // Update timer status to expired/alerted
+      timer.status = "EXPIRED_ALERT_SENT";
+      await timer.save();
+
+      // Trigger Twilio SMS broadcast
+      await NotificationService.triggerEmergencyAlert(timer.userId, {
+        location: timer.location,
+      });
+
+      console.log(`Timer ${timer._id} expired and alert dispatched.`);
+    } catch (err) {
+      console.error(`Error handling timer expiration for ${timer._id}:`, err);
+    }
   }
 }

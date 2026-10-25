@@ -49,8 +49,7 @@ export const authAPI = {
     return api.post('/auth/resend-2fa');
   },
   logout: () => {
-    localStorage.removeItem('safepath-token')
-    return api.post('/auth/logout');
+     return api.post('/auth/logout');
   },  
   me: () => {
     return api.get('/auth/me');

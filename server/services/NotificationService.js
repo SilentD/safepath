@@ -1,5 +1,11 @@
 import nodemailer from "nodemailer";
+import twilio from "twilio";
+import User from "../models/User.js";
 
+const twilioClient = twilio(
+  process.env.TWILIO_ACCOUNT_SID,
+  process.env.TWILIO_AUTH_TOKEN,
+);
 export default class NotificationService {
   static transporter;
 
@@ -26,6 +32,60 @@ export default class NotificationService {
     }
 
     return this.transporter;
+  }
+
+  /**
+   * Triggers emergency alerts to trusted contacts via Twilio SMS
+   */
+  static async triggerEmergencyAlert(userId, timerData) {
+    try {
+      // 1. Fetch user and their emergency contacts
+      const user = await User.findById(userId).populate("emergencyContacts");
+      if (!user) throw new Error("User not found for alert dispatch.");
+
+      const contacts = user.emergencyContacts || [];
+      if (contacts.length === 0) {
+        console.warn(`[Alert] No emergency contacts found for user ${userId}`);
+        return { success: false, message: "No emergency contacts registered." };
+      }
+
+      // 2. Format location Google Maps link if GPS coordinates exist
+      const { latitude, longitude } = timerData.location || {};
+      const mapsLink =
+        latitude && longitude
+          ? `https://maps.google.com/?q=${latitude},${longitude}`
+          : "Location coordinates unavailable.";
+
+      // 3. Compose emergency message
+      const messageBody = `EMERGENCY ALERT: ${user.name || "A user"} has failed to check in on One2Many Safety. Live location: ${mapsLink}`;
+
+      // 4. Send SMS to all emergency contacts in parallel
+      const smsPromises = contacts.map(async (contact) => {
+        if (!contact.phone) return null;
+
+        try {
+          return await twilioClient.messages.create({
+            body: messageBody,
+            from: process.env.TWILIO_PHONE_NUMBER,
+            to: contact.phone,
+          });
+        } catch (smsError) {
+          console.error(
+            `Failed to send SMS to ${contact.phone}:`,
+            smsError.message,
+          );
+          return null;
+        }
+      });
+
+      await Promise.all(smsPromises);
+      console.log(`[Alert] Emergency broadcast completed for user ${userId}`);
+
+      return { success: true, notifiedCount: contacts.length };
+    } catch (error) {
+      console.error("[AlertService Error]:", error.message);
+      throw error;
+    }
   }
 
   static getLocationUrl(latitude, longitude) {

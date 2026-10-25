@@ -1,4 +1,6 @@
 import EvidenceService from "../services/EvidenceService.js";
+import AlertService from "../services/EmergencyService.js";
+import Session from "../models/Session.js";
 
 function parseLocation(value) {
   if (value === undefined || value === "") return null;
@@ -69,6 +71,59 @@ export default class VaultController {
           sizeBytes: evidence.sizeBytes,
           createdAt: evidence.createdAt,
         },
+      });
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  static async handleRedModeTrigger(req, res, next) {
+    try {
+      const userId = req.user.id;
+      const sessionId = req.user.sessionId;
+      const { gpsLocation, note } = req.body;
+
+      // 1. Dispatch emergency notifications to trusted contacts
+      const alertResult = await AlertService.triggerEmergencyAlert(userId, {
+        location: gpsLocation,
+        triggerType: "RED_MODE_PANIC",
+        note: note || "Red Mode panic trigger activated.",
+      });
+
+      // 2. Lock session state for discreet mode (if session tracking is active)
+      if (sessionId) {
+        await Session.findByIdAndUpdate(sessionId, {
+          isDiscreetLocked: true,
+          discreetActivatedAt: new Date(),
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message:
+          "Red Mode activated. Emergency contacts notified and session locked.",
+        alertId: alertResult.alertId || null,
+        notifiedContactsCount: alertResult.notifiedCount || 0,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  static async handleRedModeLock(req, res, next) {
+    try {
+      const sessionId = req.user.sessionId;
+
+      if (sessionId) {
+        await Session.findByIdAndUpdate(sessionId, {
+          isDiscreetLocked: true,
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Session locked in discreet mode.",
       });
     } catch (error) {
       return next(error);

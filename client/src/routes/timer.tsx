@@ -30,13 +30,7 @@ function Timer() {
     return () => clearTimeout(t);
   }, [left]);
 
-  const total = mins * 60;
-  const shown = left ?? total;
-  const pct = left === null ? 1 : left / total;
-  const mm = String(Math.floor(shown / 60)).padStart(2, "0");
-  const ss = String(shown % 60).padStart(2, "0");
-  const R = 110, C = 2 * Math.PI * R;
-  const expired = left === 0;
+  
 
   // Helper to fetch GPS location
   const getGPS = (): Promise<{ latitude: number; longitude: number } | null> => {
@@ -52,28 +46,47 @@ function Timer() {
       );
     });
   };
-
+  let total=0;
+  const shown = left ?? total;
+  const pct = left === null ? 1 : left / total;
+  const mm = String(Math.floor(shown / 60)).padStart(2, "0");
+  const ss = String(shown % 60).padStart(2, "0");
+  const R = 110, C = 2 * Math.PI * R;
+  const expired = left === 0;
+  
   const startTimer = async () => {
-    setLoading(true);
-    setError("");
+  setLoading(true);
+  setError("");
+  
 
-    try {
-      const gpsLocation = await getGPS();
-
-      await timerAPI.start({
-        durationMinutes: mins,
-        pin,
-        gpsLocation,
-      });
-
-      setLeft(total);
-    } catch (err: any) {
-      setError(err.message || "Failed to start timer");
-    } finally {
-      setLoading(false);
+  try {
+    const userId = localStorage.getItem("userid");
+    if (!userId) {
+      throw new Error("User session not found. Please log in again.");
     }
-  };
 
+    const gpsLocation = await getGPS();
+
+    const data = await timerAPI.start({
+      userId,
+      durationMinutes: mins,
+      pin,
+      gpsLocation,
+    });
+
+    total = data.durationSeconds;
+    localStorage.setItem("user",data.userId);
+    localStorage.setItem("pinHash",data.pinHash);
+    localStorage.setItem("location",data.location);
+    
+    setLeft(total);
+  } catch (err: any) {
+    setError(err.message || "Failed to start timer");
+  } finally {
+    setLoading(false);
+  }
+};
+  
   return (
     <AppShell eyebrow="Check-in" title="Safety Ping">
       <div className="relative mx-auto mt-4 grid aspect-square w-64 place-items-center">

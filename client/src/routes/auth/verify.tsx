@@ -38,16 +38,16 @@ function Auth() {
         challengeId,
         code: code.join(""),
       });
-
-      if (response.accessToken) {
-        localStorage.setItem("safepath_token", response.accessToken);
-      }
-
-      // Cleanup
+      if (response.accessToken){ 
+      localStorage.setItem("safepath_token", response.accessToken);    
+      const userid = response.sessionUser?.id || response.sessionUser?._id;
+      localStorage.setItem("userid", userid);
+      
       localStorage.removeItem("challenge");
       localStorage.removeItem("temp_email");
 
       nav({ to: "/timer" });
+    }
     } catch (e: any) {
       alert(e.message || "Invalid code");
     }

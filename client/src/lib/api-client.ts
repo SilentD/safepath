@@ -8,7 +8,7 @@ export async function apiRequest<T = any>(
   endpoint: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  // 1. Request Interceptor: Attach Auth Token if available
+  // 1. Request Interceptor: Attach Auth Token if available in localStorage
   const token = localStorage.getItem("safepath_token");
 
   const defaultHeaders: Record<string, string> = {
@@ -18,6 +18,7 @@ export async function apiRequest<T = any>(
 
   const config: RequestInit = {
     ...options,
+    credentials: "include", // <--- Crucial: Tells the browser to send/receive cookies
     headers: {
       ...defaultHeaders,
       ...options.headers,
@@ -32,6 +33,7 @@ export async function apiRequest<T = any>(
       if (response.status === 401) {
         // Token expired or invalid — clear session and redirect to login
         localStorage.removeItem("safepath_token");
+        localStorage.removeItem("userid");
         if (window.location.pathname !== "/auth/login") {
           window.location.href = "/auth/login";
         }

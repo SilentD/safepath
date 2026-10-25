@@ -7,12 +7,7 @@ export default async function requireAuthentication(req, res, next) {
     const header = req.headers.authorization || "";
     const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
 
-    if (
-      !token ||
-      token === "null" ||
-      token === "undefined" ||
-      token.split(".").length !== 3
-    ) {
+    if (!token || token === "null" || token === "undefined") {
       return res.status(401).json({
         success: false,
         message: "Authentication required.",
