@@ -39,7 +39,7 @@ function VerifyEmail() {
         ))}
       </div>
       <button disabled={!full} onClick={submit} className="mt-8 w-full rounded-xl bg-primary py-4 font-semibold text-primary-foreground disabled:opacity-40">Verify & continue</button>
-      <button onClick={()=>authAPI.resendVerification({email})} className="mt-3 w-full py-3 text-sm text-muted-foreground">Resend code</button>
+      
     </AppShell>
   );
 }

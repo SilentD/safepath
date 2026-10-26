@@ -414,7 +414,7 @@ export default class AuthService {
   }
 
   static async logout(reqUser) {
-    return Session.revoke(reqUser.sessionId, reqUser.id);
+    return Session.revoke(reqUser?.sessionId, reqUser?.id);
   }
 
   static async forgotPassword({ email }) {

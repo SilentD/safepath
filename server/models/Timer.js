@@ -48,6 +48,13 @@ export default class Timer {
     });
   }
 
+  static async findActive(userId, status) {
+    return this.collection().find({
+      userId: toObjectId(userId, "user ID"),
+      status: status,
+    });
+  }
+
   static async checkIn(id, userId) {
     return this.collection().findOneAndUpdate(
       {
@@ -59,7 +66,8 @@ export default class Timer {
       {
         $set: {
           status: "checked_in",
-          updatedAt: new Date(),
+          updatedAt: new Date().getDate,
+          notificationStatus: "mocked",
         },
         $unset: {
           pinHash: "",
@@ -69,7 +77,7 @@ export default class Timer {
     );
   }
 
-  static async expireDueTimers(batchSize = 100) {
+  static async expireDueTimers(batchSize = 10) {
     const now = new Date();
 
     const dueTimers = await this.collection()
@@ -108,7 +116,7 @@ export default class Timer {
     return expiredCount;
   }
 
-  static async findPendingNotifications(batchSize = 100) {
+  static async findPendingNotifications(batchSize = 10) {
     return this.collection()
       .find({
         status: "expired",

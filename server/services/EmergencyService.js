@@ -1,5 +1,6 @@
 import twilio from "twilio";
 import User from "../models/User.js";
+import Timer from "../models/Timer.js";
 
 // Initialize Twilio client using environment variables
 const twilioClient = twilio(
@@ -14,7 +15,7 @@ export default class AlertService {
   static async triggerEmergencyAlert(userId, timerData = {}) {
     try {
       // 1. Fetch user and their emergency contacts
-      const user = await User.findById(userId).populate("emergencyContacts");
+      const user = await User.findById(userId);
       if (!user) {
         throw new Error("User not found for alert dispatch.");
       }
@@ -30,10 +31,10 @@ export default class AlertService {
       }
 
       // 2. Format location Google Maps link if GPS coordinates exist
-      const { latitude, longitude } = timerData.location || {};
+      const { locationLat, locationLon } = timerData.location || {};
       const mapsLink =
         latitude && longitude
-          ? `https://maps.google.com/?q=${latitude},${longitude}`
+          ? `https://maps.google.com/?q=${locationLat},${locationLon}`
           : "Location coordinates unavailable.";
 
       // 3. Compose emergency message based on trigger type
@@ -76,6 +77,40 @@ export default class AlertService {
       };
     } catch (error) {
       console.error("[AlertService Error]:", error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Handles a trusted contact responding "Help is on the way" to an active alert
+   */
+  static async handleAlertResponse(alertId, responderUserId) {
+    try {
+      // Find the active timer/alert by ID
+      const timer = await Timer.findById(alertId);
+      if (!timer) {
+        throw new Error("Active alert or timer not found.");
+      }
+
+      // Update timer state to indicate help has been dispatched
+      timer.status = "HELP_ON_THE_WAY";
+      timer.responderId = responderUserId;
+      timer.respondedAt = new Date();
+      await timer.save();
+
+      console.log(
+        `[Alert] Responder ${responderUserId} acknowledged alert ${alertId}. Notified endangered user.`,
+      );
+
+      return {
+        success: true,
+        message: "Response registered successfully.",
+        timerId: timer._id,
+        status: timer.status,
+        responderId: responderUserId,
+      };
+    } catch (error) {
+      console.error("[AlertService Response Error]:", error.message);
       throw error;
     }
   }

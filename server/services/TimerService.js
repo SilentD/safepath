@@ -41,7 +41,7 @@ function validateLocation(location) {
 export default class TimerService {
   static async start({ userId, durationMinutes, pin, gpsLocation }) {
     toObjectId(userId, "user ID");
-
+    
     if (
       !Number.isInteger(durationMinutes) ||
       durationMinutes < 1 ||
@@ -101,7 +101,7 @@ export default class TimerService {
       await timer.save();
 
       // Trigger Twilio SMS broadcast
-      await NotificationService.triggerEmergencyAlert(timer.userId, {
+      await AlertService.triggerEmergencyAlert(timer.userId, {
         location: timer.location,
       });
 

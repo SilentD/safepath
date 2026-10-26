@@ -21,6 +21,7 @@ function Timer() {
   const [mins, setMins] = useState(15);
   const [left, setLeft] = useState<number | null>(null);
   const [pin, setPin] = useState("");
+  const [auth, setAuth] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -77,7 +78,10 @@ function Timer() {
     total = data.durationSeconds;
     localStorage.setItem("user",data.userId);
     localStorage.setItem("pinHash",data.pinHash);
-    localStorage.setItem("location",data.location);
+    localStorage.setItem("timerId",data._id);
+    localStorage.setItem("locationLat",data.locationLat);
+    localStorage.setItem("locationLon",data.locationLng);
+    
     
     setLeft(total);
   } catch (err: any) {
@@ -87,6 +91,29 @@ function Timer() {
   }
 };
   
+  const invalidateTimer = async () =>{
+    setLoading(true);
+    setError("");
+
+    try {
+      const locationLat = localStorage.getItem("locationLat");
+      const locationLng = localStorage.getItem("locationLon");
+      const timerId = localStorage.getItem("timerId");
+      const location = {lat:locationLat,lon:locationLng}
+      timerAPI.checkIn({timerId,auth,location});
+      setLeft(null);
+      localStorage.removeItem("pinHash");
+      localStorage.removeItem("timerId");
+      localStorage.removeItem("locationLat");
+      localStorage.removeItem("locationLon");
+    
+    } catch (error) {
+      setError("Invalid data entry.");
+    }finally{
+      setLoading(false);
+    }
+  
+  };
   return (
     <AppShell eyebrow="Check-in" title="Safety Ping">
       <div className="relative mx-auto mt-4 grid aspect-square w-64 place-items-center">
@@ -152,12 +179,18 @@ function Timer() {
         </>
       ) : (
         <div className="mt-8 grid grid-cols-2 gap-3">
-          <button onClick={() => setLeft(null)} className="rounded-xl bg-green-600 py-4 font-semibold text-white">
+          <button onClick={invalidateTimer} className="rounded-xl bg-green-600 py-4 font-semibold text-white">
             I'm safe
           </button>
-          <button onClick={() => setLeft(left + 600)} className="rounded-xl border bg-card py-4 font-semibold">
-            +10 min
-          </button>
+          <input
+            className="mt-4 w-full h-12 rounded-xl border bg-input px-4 outline-none focus:border-primary text-sm"
+            type="password"
+            placeholder="Re-enter Safety PIN"
+            value={auth}
+            onChange={(e) => setAuth(e.target.value)}
+            required
+          />
+          
         </div>
       )}
 

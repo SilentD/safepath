@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import NotificationService from "../services/NotificationService.js";
+import Timer from "../models/Timer.js"; // or your Alert model if you have a dedicated one
 
 function badRequest(message) {
   return Object.assign(new Error(message), { statusCode: 400 });
@@ -61,7 +62,7 @@ export default class EmergencyController {
         notificationMode: result.mode,
       });
     } catch (error) {
-      return next(error);
+      return next(error.message);
     }
   }
 }

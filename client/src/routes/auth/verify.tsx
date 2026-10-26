@@ -87,7 +87,8 @@ function Auth() {
       >
         Verify & continue
       </button>
-      <button className="mt-3 w-full py-3 text-sm text-muted-foreground">Resend code in 0:28</button>
+      <button onClick={()=>authAPI.resendVerification({email})} className="mt-3 w-full py-3 text-sm text-muted-foreground">Resend code</button>
+    
       <div className="mt-10 rounded-2xl border bg-card p-4 text-sm text-muted-foreground">
         <p className="font-medium text-foreground">Discreet mode</p>
         Notifications show as "Calendar reminder" so no one else knows what this app is.

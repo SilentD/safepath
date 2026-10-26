@@ -15,7 +15,6 @@ const tabs = [
 const serviceLinks = [
   { to: "/contacts", label: "Trusted Contacts" },
   { to: "/check-in-history", label: "Check-in History" },
-  { to: "/settings", label: "App Settings" },
   { to: "/discreet-mode", label: "Discreet Mode Guide" },
 ];
 
@@ -58,8 +57,8 @@ export function AppShell({
       }
     };
 
-    fetchAlerts();
-    const interval = setInterval(fetchAlerts, 15000);
+    //fetchAlerts();
+    const interval = setInterval(fetchAlerts, 75000);
     return () => clearInterval(interval);
   }, [currentAlert]);
   

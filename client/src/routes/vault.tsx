@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { AppShell } from "@/components/AppShell";
 import { safetyAPI } from "@/services/emergency";
 
@@ -24,6 +24,62 @@ const items = [
 function Vault() {
   const [on, setOn] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // MediaRecorder refs for background audio capture
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  // Function to start discrete audio recording
+  const startRecording = async () => {
+    try {
+      audioChunksRef.current = [];
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        // Create blob once recording stops
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        
+        // Stop all audio tracks to release microphone
+        stream.getTracks().forEach((track) => track.stop());
+
+        // Get current location snapshot for evidence tagging
+        if ("geolocation" in navigator) {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+              handleCompleteRecording(audioBlob, coords);
+            },
+            () => {
+              handleCompleteRecording(audioBlob, null);
+            }
+          );
+        } else {
+          handleCompleteRecording(audioBlob, null);
+        }
+      };
+
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.start();
+      console.log("Discrete audio recording started...");
+    } catch (err) {
+      console.error("Microphone access denied or unavailable:", err);
+    }
+  };
+
+  // Function to stop audio recording and trigger upload
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+      console.log("Audio recording stopped. Processing evidence...");
+    }
+  };
 
   const handleToggleRedMode = async () => {
     const nextState = !on;
@@ -32,24 +88,25 @@ function Vault() {
     try {
       if (nextState) {
         // 1. Send backend notification to lock session state in Red Mode
-        await safetyAPI.enableRedMode();
+        await safetyAPI.triggerRedMode();
 
         // 2. Obtain current GPS coordinates and dispatch immediate SOS
-        let gpsLocation: { latitude: number; longitude: number } | null = null;
         if ("geolocation" in navigator) {
           navigator.geolocation.getCurrentPosition(
             async (pos) => {
-              gpsLocation = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+              const gpsLocation = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
               await safetyAPI.triggerSOS({ gpsLocation, note: "Red Mode Panic button triggered." });
-            },
-            async () => {
-              // Fallback without GPS if permission is denied
-              await safetyAPI.triggerSOS({ note: "Red Mode Panic button triggered (no GPS)." });
             }
           );
         } else {
           await safetyAPI.triggerSOS({ note: "Red Mode Panic button triggered." });
         }
+
+        // 3. Start discrete recording stream
+        await startRecording();
+      } else {
+        // Stop recording when Red Mode is turned off
+        stopRecording();
       }
 
       setOn(nextState);
@@ -60,6 +117,16 @@ function Vault() {
     }
   };
 
+  const handleCompleteRecording = async (recordedBlob: Blob, currentCoords: { lat: number; lng: number } | null) => {
+    try {
+      console.log("Uploading discrete Red Mode evidence to vault...");
+      const result = await safetyAPI.uploadEvidence(recordedBlob, currentCoords);
+      console.log("Evidence stored successfully:", result);
+    } catch (error) {
+      console.error("Failed to upload evidence to vault:", error);
+    }
+  };
+  
   return (
     <AppShell eyebrow="Emergency" title={on ? "Red Mode active" : "Red Mode"} red={on}>
       {/* Big Hold / Stop Button */}
@@ -82,11 +149,10 @@ function Vault() {
       </button>
 
       {/* Dynamic Status Badges */}
-      <div className="mt-8 grid grid-cols-3 gap-2 text-center text-xs">
+      <div className="mt-8 grid grid-cols-2 gap-2 text-center text-xs">
         {[
           ["Alert sent", on],
           ["Recording", on],
-          ["SAPS notified", on],
         ].map(([l, a]) => (
           <div
             key={l as string}

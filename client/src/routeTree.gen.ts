@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as TimerRouteImport } from './routes/timer'
 import { Route as VaultRouteImport } from './routes/vault'
@@ -23,6 +25,16 @@ import { Route as AuthVerifyEmailRouteImport } from './routes/auth/verifyEmail'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactsRoute = ContactsRouteImport.update({
+  id: '/contacts',
+  path: '/contacts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SupportRoute = SupportRouteImport.update({
@@ -73,6 +85,8 @@ const AuthVerifyEmailRoute = AuthVerifyEmailRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/contacts': typeof ContactsRoute
   '/support': typeof SupportRoute
   '/timer': typeof TimerRoute
   '/vault': typeof VaultRoute
@@ -85,6 +99,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/contacts': typeof ContactsRoute
   '/support': typeof SupportRoute
   '/timer': typeof TimerRoute
   '/vault': typeof VaultRoute
@@ -98,6 +114,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/contacts': typeof ContactsRoute
   '/support': typeof SupportRoute
   '/timer': typeof TimerRoute
   '/vault': typeof VaultRoute
@@ -112,6 +130,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
+    | '/contacts'
     | '/support'
     | '/timer'
     | '/vault'
@@ -124,6 +144,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
+    | '/contacts'
     | '/support'
     | '/timer'
     | '/vault'
@@ -136,6 +158,8 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin'
+    | '/contacts'
     | '/support'
     | '/timer'
     | '/vault'
@@ -149,6 +173,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
+  ContactsRoute: typeof ContactsRoute
   SupportRoute: typeof SupportRoute
   TimerRoute: typeof TimerRoute
   VaultRoute: typeof VaultRoute
@@ -167,6 +193,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contacts': {
+      id: '/contacts'
+      path: '/contacts'
+      fullPath: '/contacts'
+      preLoaderRoute: typeof ContactsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/support': {
@@ -237,6 +277,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
+  ContactsRoute: ContactsRoute,
   SupportRoute: SupportRoute,
   TimerRoute: TimerRoute,
   VaultRoute: VaultRoute,

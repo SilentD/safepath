@@ -1,6 +1,8 @@
 import EvidenceService from "../services/EvidenceService.js";
 import AlertService from "../services/EmergencyService.js";
 import Session from "../models/Session.js";
+import EvidenceVault from "../models/Evidence.js";
+import crypto from "crypto";
 
 function parseLocation(value) {
   if (value === undefined || value === "") return null;
@@ -36,43 +38,55 @@ function parseLocation(value) {
 }
 
 export default class VaultController {
-  static async upload(req, res, next) {
+  // Helper to generate a simple file hash if needed
+  static generateFileHash(buffer) {
+    return crypto.createHash("sha256").update(buffer).digest("hex");
+  }
+
+  static async uploadVaultEvidence(req, res, next) {
     try {
-      const userId = req.user?.id ?? req.user?._id;
+      // Resolve user ID securely from auth middleware
+      const userId = req.user?.id || req.user?._id || req.userId;
+      const file = req.file; // Provided by multer middleware
+      const { locationLat, locationLng } = req.body;
 
       if (!userId) {
-        throw Object.assign(new Error("Authenticated user is required."), {
-          statusCode: 401,
-        });
+        return res
+          .status(401)
+          .json({ success: false, message: "Unauthorized user session." });
       }
 
-      if (!req.file) {
-        throw Object.assign(
-          new Error("Upload an audio file using the audio field."),
-          { statusCode: 400 },
-        );
+      if (!file) {
+        return res
+          .status(400)
+          .json({ success: false, message: "No evidence file provided." });
       }
 
-      const gpsLocation = parseLocation(req.body?.gpsLocation);
+      const now = new Date();
 
-      const evidence = await EvidenceService.upload({
-        userId,
-        file: req.file,
-        gpsLocation,
-      });
+      // Construct the evidence record matching your database schema
+      const record = {
+        userId: userId, // Adjust to toObjectId(userId, "user ID") if required by your model utils
+        fileId: file.filename || file.path || `evidence-${Date.now()}`,
+        fileHash: file.buffer ? generateFileHash(file.buffer) : "hash-pending",
+        mimeType: file.mimetype || "audio/webm",
+        sizeBytes: file.size || 0,
+        originalName: file.originalname || "emergency-recording.webm",
+        locationLat: locationLat ? parseFloat(locationLat) : null,
+        locationLng: locationLng ? parseFloat(locationLng) : null,
+        createdAt: now,
+      };
+
+      // Save to MongoDB Evidence Vault collection
+      const savedRecord = await EvidenceVault.create(record);
 
       return res.status(201).json({
         success: true,
-        message: "Evidence uploaded and integrity hash generated.",
-        data: {
-          evidenceId: evidence._id,
-          fileHash: evidence.fileHash,
-          mimeType: evidence.mimeType,
-          sizeBytes: evidence.sizeBytes,
-          createdAt: evidence.createdAt,
-        },
+        message: "Evidence securely stored in vault.",
+        evidenceId: savedRecord._id,
       });
     } catch (error) {
+      console.error("[Vault Upload Error]:", error);
       return next(error);
     }
   }

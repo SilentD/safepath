@@ -1,7 +1,8 @@
 import Session from "../models/Session.js";
 import User from "../models/User.js";
 import AuthTokenService from "../services/AuthTokenService.js";
-
+import { getDb } from "../config/database.js";
+import { toObjectId } from "../models/model-utils.js";
 export default async function requireAuthentication(req, res, next) {
   try {
     const header = req.headers.authorization || "";

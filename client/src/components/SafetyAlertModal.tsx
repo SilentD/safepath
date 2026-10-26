@@ -16,18 +16,23 @@ export function SafetyAlertModal({ alert, onClose }: SafetyAlertModalProps) {
     ? `https://maps.google.com/?q=${alert.location.latitude},${alert.location.longitude}`
     : null;
 
-  const handleHelpOnTheWay = async () => {
+  const handleRespond = async (alertId: string) => {
+    if (!alertId) {
+      console.error("Missing alertId for response action");
+      return;
+    }
+  
     try {
-      setLoading(true);
-      await alert.respondToAlert(alert.id);
-      setResponded(true);
+      // Call the alert API service we created
+      await alert.respondToAlert(alertId);
+      alert("Response sent: Help is on the way!");
+      // Close the modal or update local state
+      onClose(); 
     } catch (err: any) {
-      alert(err.message || "Failed to send response");
-    } finally {
-      setLoading(false);
+      console.error("Failed to send response:", err);
+      alert(err.message || "Failed to notify dispatch.");
     }
   };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in">
       <div className="w-full max-w-md rounded-3xl border bg-card p-6 shadow-2xl">
@@ -65,13 +70,12 @@ export function SafetyAlertModal({ alert, onClose }: SafetyAlertModalProps) {
               ✓ Dispatched: "Help is on the way!"
             </div>
           ) : (
-            <button
-              disabled={loading}
-              onClick={handleHelpOnTheWay}
-              className="w-full rounded-xl bg-primary py-4 font-semibold text-primary-foreground shadow-lg hover:opacity-90 transition-opacity disabled:opacity-50"
-            >
-              {loading ? "Notifying..." : "Respond: Help is on the way"}
-            </button>
+          <button 
+            onClick={alert('hello safety')}
+            className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground shadow"
+          >
+            Help is on the way
+          </button>
           )}
 
           <button

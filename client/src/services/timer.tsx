@@ -15,7 +15,7 @@ export const timerAPI = {
     return api.post("/ping/start",payload);
   },
   
-  checkIn: (timerId: string, payload?: { pin?: string; gpsLocation?: any }) => {
-    return api.post(`/ping/${timerId}/checkIn`, payload);
+  checkIn: ( payload?: { timerId: string; pin?: string; gpsLocation?: any ;}) => {
+    return api.post(`/ping/${payload.timerId}/checkIn`, payload);
   },
 };
